@@ -8,32 +8,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Chatroom {
+model Auction {
+  id               String            @id @default(uuid())
+  type             AuctionType       @default(REGULAR)
+  title            String
+  isActive         Boolean           @default(true)
+  startsAt         DateTime?
+  endsAt           DateTime?
+  initialPrice     Int           @default(0)
+  stepPrice        Int           @default(0)
+  buyoutPrice      Int?
+  description      String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  companyId        String?
+  chatroomId       Int
+
+  positions        AuctionPosition[]
+  participants     AuctionParticipants[]
+
+  @@map("auctions")
+}
+
+model AuctionPosition {
   id            Int             @id @default(autoincrement())
+  auctionId     String
+  auction       Auction  @relation(fields: [auctionId], references: [id])
+
   name          String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  messages      Message[]
-  ChatroomUsers ChatroomUsers[]
+  volume        Int
+  volumeUnit    VolumeUnit
+  price         Int
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("auction_positions")
 }
 
-model Message {
-  id         Int      @id @default(autoincrement())
-  content    String
-  imageUrl   String?
-  userId     Int
-  chatroomId Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  chatroom   Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+model AuctionParticipants {
+  id            Int             @id @default(autoincrement())
+  auctionId     String
+  auction       Auction  @relation(fields: [auctionId], references: [id])
+
+  companyId     String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@map("auction_participants")
 }
 
-model ChatroomUsers {
-  chatroomId Int
-  userId     Int
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  chatroom   Chatroom @relation(fields: [chatroomId], references: [id], onDelete: Cascade)
+enum AuctionType {
+  REGULAR
+  COLLECTIVE
+}
 
-  @@id([chatroomId, userId])
+enum VolumeUnit {
+  KG
+  TON
 }

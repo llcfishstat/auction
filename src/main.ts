@@ -7,15 +7,24 @@ import helmet from 'helmet';
 
 import { AppModule } from './app/app.module';
 import { setupSwagger } from './swagger';
+import { Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
     const logger = new Logger();
-    const app = await NestFactory.create(AppModule, new ExpressAdapter(express()), {
-        cors: true,
-    });
+    const app = await NestFactory.create(AppModule, new ExpressAdapter(express()));
 
     const configService = app.get(ConfigService);
     const expressApp = app.getHttpAdapter().getInstance();
+
+    const corsOrigin = configService.get<string>('app.corsOrigin') || '*';
+    const allowedOrigins = [corsOrigin, 'http://localhost:8888'];
+
+    app.enableCors({
+        origin: allowedOrigins,
+        methods: 'GET,POST,PUT,DELETE,OPTIONS',
+        allowedHeaders: 'Content-Type,Authorization',
+        credentials: true,
+    });
 
     expressApp.get('/', (_req: Request, res: Response) => {
         res.status(200).json({
@@ -42,6 +51,18 @@ async function bootstrap() {
         });
     }
     setupSwagger(app);
+
+    app.connectMicroservice({
+        transport: Transport.RMQ,
+        options: {
+            urls: [`${configService.get<string>('rmq.uri')}`],
+            queue: `${configService.get<string>('rmq.auth')}`,
+            queueOptions: { durable: false },
+            prefetchCount: 1,
+        },
+    });
+    await app.startAllMicroservices();
+
     await app.listen(port, host);
     logger.log(`🚀 ${configService.get('app.name')} service started successfully on port ${port}`);
 }
