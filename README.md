@@ -1,1 +1,1 @@
-# Auction Submodule Service of Fishstat
+# Auction Submodule Service
