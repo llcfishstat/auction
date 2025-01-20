@@ -18,7 +18,15 @@ model Auction {
   initialPrice     Int           @default(0)
   stepPrice        Int           @default(0)
   buyoutPrice      Int?
-  description      String?
+  expirationDate   DateTime
+  manufactureDate  DateTime
+  manufacturer     String
+  gost             Boolean
+  technicalConditions   Boolean
+  comment          String?
+  documentsUrls    String[]
+  imagesUrls       String[]
+  auctionDuration  Int
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
 
@@ -32,14 +40,18 @@ model Auction {
 }
 
 model AuctionPosition {
-  id            Int             @id @default(autoincrement())
+  id            String            @id @default(uuid())
   auctionId     String
   auction       Auction  @relation(fields: [auctionId], references: [id])
 
-  name          String
-  volume        Int
-  volumeUnit    VolumeUnit
-  price         Int
+  productId           Int
+  totalVolume         Int
+  price               Int
+  cuttingTypeId       Int?
+  sortId              Int?
+  catchAreaId         Int?
+  processingTypeId    Int?
+  sizeId              Int?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
