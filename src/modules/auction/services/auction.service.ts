@@ -38,10 +38,19 @@ export class AuctionService {
         initialPrice: dto.initialPrice,
         stepPrice: dto.stepPrice,
         buyoutPrice: dto.buyoutPrice,
-        description: dto.description,
+        comment: dto.comment,
         startsAt: dto.startsAt,
         endsAt: dto.endsAt,
         companyId: dto.companyId,
+        expiration: dto.expiration,
+        manufactureDate: dto.manufactureDate,
+        manufacturer: dto.manufacturer,
+        gost: dto.gost,
+        technicalConditions: dto.technicalConditions,
+        auctionDuration: dto.auctionDuration,
+        chatroomId: dto.chatroomId,
+        images: dto.images.map(i => i.downloadUrl),
+        documents: dto.documents.map(d => d.downloadUrl),
         isActive: true,
       },
     });
@@ -59,10 +68,14 @@ export class AuctionService {
   ) {
     const data = positions.map((pos) => ({
       auctionId,
-      name: pos.name,
-      volume: pos.volume,
-      volumeUnit: pos.volumeUnit,
+      productId: pos.productName,
+      totalVolume: pos.totalVolume,
       price: pos.price,
+      cuttingTypeId: pos.cuttingType,
+      sortId: pos.sort,
+      catchAreaId: pos.catchArea,
+      processingTypeId: pos.processingType,
+      sizeId: pos.size,
     }));
     await this.prisma.auctionPosition.createMany({ data });
   }
@@ -71,8 +84,7 @@ export class AuctionService {
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
       include: {
-        positions: true,
-        // company: true, // if you have a company relation
+        positions: true
       },
     });
     if (!auction) {

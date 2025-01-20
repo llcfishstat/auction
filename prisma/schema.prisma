@@ -18,14 +18,14 @@ model Auction {
   initialPrice     Int           @default(0)
   stepPrice        Int           @default(0)
   buyoutPrice      Int?
-  expirationDate   DateTime
+  expiration       Int
   manufactureDate  DateTime
   manufacturer     String
   gost             Boolean
   technicalConditions   Boolean
   comment          String?
-  documentsUrls    String[]
-  imagesUrls       String[]
+  documents    String[]
+  images       String[]
   auctionDuration  Int
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
