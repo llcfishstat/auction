@@ -24,13 +24,6 @@ export class AuctionService {
   }
 
   async createAuction(dto: AuctionCreateDto) {
-    if (
-      dto.type === AuctionType.COLLECTIVE &&
-      (!dto.positions || dto.positions.length === 0)
-    ) {
-      throw new ForbiddenException('Сборный аукцион без позиций недопустим');
-    }
-
     const createdAuction = await this.prisma.auction.create({
       data: {
         type: dto.type,
