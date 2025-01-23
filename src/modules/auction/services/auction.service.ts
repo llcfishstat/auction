@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ForbiddenException,
   Inject,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -13,6 +12,7 @@ import {
   AuctionCreatePositionDto,
 } from 'src/modules/auction/dtos/auction-create.dto';
 import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
+import { AuctionResponseDto } from 'src/modules/auction/dtos/auction-response.dto';
 
 @Injectable()
 export class AuctionService {
@@ -23,7 +23,7 @@ export class AuctionService {
     this.authClient.connect();
   }
 
-  async createAuction(dto: AuctionCreateDto) {
+  async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {
     const createdAuction = await this.prisma.auction.create({
       data: {
         type: dto.type,
@@ -70,7 +70,7 @@ export class AuctionService {
       processingTypeId: pos.processingType,
       sizeId: pos.size,
     }));
-    await this.prisma.auctionPosition.createMany({ data });
+    await this.prisma.auctionPosition.createMany({data});
   }
 
   async getAuctionById(auctionId: string) {
@@ -86,20 +86,33 @@ export class AuctionService {
     return auction;
   }
 
-  async getAuctionsList(type?: AuctionType) {
+  async getAuctionsList(
+    type?: AuctionType,
+    page = 1,
+    limit = 10,
+  ): Promise<{ data: AuctionResponseDto[]; total: number }> {
     const where: Prisma.AuctionWhereInput = {};
     if (type) {
       where.type = type;
     }
 
-    return this.prisma.auction.findMany({
-      where,
-      include: {
-        positions: true,
-        // company: true
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.auction.findMany({
+        where,
+        include: { positions: true },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take,
+      }),
+      this.prisma.auction.count({
+        where,
+      }),
+    ]);
+
+    return { data, total };
   }
 
   async updateAuction(auctionId: string, dto: AuctionUpdateDto) {
