@@ -34,7 +34,7 @@ import { AuctionModule } from 'src/modules/auction/auction.module';
                         urls: [`${configService.get('rmq.uri')}`],
                         queue: `${configService.get('rmq.auth')}`,
                         queueOptions: {
-                            durable: false,
+                            durable: true,
                         },
                     },
                 }),
