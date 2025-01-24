@@ -55,6 +55,8 @@ export class AuctionController {
     @Query('type') type?: AuctionType,
     @Query('page') page: string = '1',
     @Query('limit') limit: string = '10',
+    @Query('sort') sort?: 'asc' | 'desc',
+    @Query('search') search?: string,
   ): Promise<AuctionListResponseDto> {
     const pageNumber = parseInt(page, 10) || 1;
     const limitNumber = parseInt(limit, 10) || 10;

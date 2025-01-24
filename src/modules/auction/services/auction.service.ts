@@ -90,8 +90,18 @@ export class AuctionService {
     type?: AuctionType,
     page = 1,
     limit = 10,
+    sort?: 'asc' | 'desc',  // новый
+    search?: string,        // новый
   ): Promise<{ data: AuctionResponseDto[]; total: number }> {
     const where: Prisma.AuctionWhereInput = {};
+
+    if (search) {
+      where.title = {
+        contains: search,
+        mode: 'insensitive',
+      };
+    }
+
     if (type) {
       where.type = type;
     }
@@ -99,11 +109,19 @@ export class AuctionService {
     const skip = (page - 1) * limit;
     const take = limit;
 
+    let orderBy: Prisma.AuctionOrderByWithRelationInput = {
+      createdAt: 'desc',
+    };
+
+    if (sort === 'asc') {
+      orderBy = { createdAt: 'asc' };
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.auction.findMany({
         where,
         include: { positions: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take,
       }),
