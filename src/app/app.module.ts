@@ -10,6 +10,8 @@ import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import { join } from 'path';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { AuctionModule } from 'src/modules/auction/auction.module';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
 
 @Module({
     imports: [
@@ -44,7 +46,11 @@ import { AuctionModule } from 'src/modules/auction/auction.module';
     ],
     controllers: [AppController],
     providers: [
-      PrismaService
+      PrismaService,
+        {
+            provide: APP_INTERCEPTOR,
+            useClass: ResponseInterceptor,
+        },
     ]
 })
 export class AppModule {}
