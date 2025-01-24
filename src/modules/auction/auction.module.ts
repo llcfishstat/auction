@@ -19,7 +19,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
             urls: [`${configService.get('rmq.uri')}`],
             queue: `${configService.get('rmq.auth')}`,
             queueOptions: {
-              durable: false,
+              durable: true,
             },
           },
         }),
