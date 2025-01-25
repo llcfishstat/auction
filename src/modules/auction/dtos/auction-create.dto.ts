@@ -189,7 +189,7 @@ export class AuctionCreateDto {
   @Type(() => AuctionCreatePositionDto)
   positions?: AuctionCreatePositionDto[];
 
-  @ApiProperty({ type: [AuctionParticipantResponseDto] })
+  @ApiProperty({ type: [AuctionCreateParticipantDto] })
   @IsArray()
-  participants?: AuctionParticipantResponseDto[];
+  participants?: AuctionCreateParticipantDto[];
 }
