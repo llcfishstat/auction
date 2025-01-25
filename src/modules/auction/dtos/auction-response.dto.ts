@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AuctionType } from '@prisma/client';
+import { IsInt } from 'class-validator';
 
 export class DictionaryItemDto {
   @ApiProperty({ example: 1 })
@@ -115,6 +116,26 @@ export class AuctionResponseDto {
 
   @ApiProperty({ example: 'Expiration' })
   expiration: number;
+
+  @ApiProperty({ example: true, description: 'Активен ли аукцион' })
+  isActive: boolean;
+
+  @ApiProperty({ example: true, description: 'Публичный ли аукцион' })
+  isPublic: boolean;
+
+  @ApiProperty({
+    isArray: true,
+    type: String,
+    description: 'Массив URL изображений (если храним именно строки)',
+  })
+  images: string[];
+
+  @ApiProperty({
+    isArray: true,
+    type: String,
+    description: 'Массив URL документов (если храним именно строки)',
+  })
+  documents: string[];
 
   @ApiProperty({ type: [AuctionPositionResponseDto] })
   positions: AuctionPositionResponseDto[];
