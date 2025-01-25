@@ -116,6 +116,10 @@ export class AuctionCreateDto {
   @IsBoolean()
   technicalConditions: boolean;
 
+  @ApiProperty({ example: true })
+  @IsBoolean()
+  isPublic: boolean;
+
   @ApiProperty({ example: 'Some comment' })
   @IsOptional()
   @IsString()

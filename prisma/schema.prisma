@@ -1,5 +1,5 @@
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
 }
 
@@ -9,63 +9,64 @@ datasource db {
 }
 
 model Auction {
-  id               String            @id @default(uuid())
-  type             AuctionType       @default(REGULAR)
-  title            String
-  isActive         Boolean           @default(true)
-  startsAt         DateTime?
-  endsAt           DateTime?
-  initialPrice     Int           @default(0)
-  stepPrice        Int           @default(0)
-  buyoutPrice      Int?
-  expiration       Int
-  manufactureDate  DateTime
-  manufacturer     String
-  gost             Boolean
-  technicalConditions   Boolean
-  comment          String?
-  documents    String[]
-  images       String[]
-  auctionDuration  Int
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id                  String      @id @default(uuid())
+  type                AuctionType @default(REGULAR)
+  title               String
+  isActive            Boolean     @default(true)
+  isPublic            Boolean     @default(true)
+  startsAt            DateTime?
+  endsAt              DateTime?
+  initialPrice        Int         @default(0)
+  stepPrice           Int         @default(0)
+  buyoutPrice         Int?
+  expiration          Int
+  manufactureDate     DateTime
+  manufacturer        String
+  gost                Boolean
+  technicalConditions Boolean
+  comment             String?
+  documents           String[]
+  images              String[]
+  auctionDuration     Int
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
 
-  companyId        String?
-  chatroomId       Int
+  companyId  String?
+  chatroomId Int
 
-  positions        AuctionPosition[]
-  participants     AuctionParticipants[]
+  positions    AuctionPosition[]
+  participants AuctionParticipants[]
 
   @@map("auctions")
 }
 
 model AuctionPosition {
-  id            String            @id @default(uuid())
-  auctionId     String
-  auction       Auction  @relation(fields: [auctionId], references: [id])
+  id        String  @id @default(uuid())
+  auctionId String
+  auction   Auction @relation(fields: [auctionId], references: [id])
 
-  productId           Int
-  totalVolume         Int
-  price               Int
-  cuttingTypeId       Int?
-  sortId              Int?
-  catchAreaId         Int?
-  processingTypeId    Int?
-  sizeId              Int?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  productId        Int
+  totalVolume      Int
+  price            Int
+  cuttingTypeId    Int?
+  sortId           Int?
+  catchAreaId      Int?
+  processingTypeId Int?
+  sizeId           Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   @@map("auction_positions")
 }
 
 model AuctionParticipants {
-  id            Int             @id @default(autoincrement())
-  auctionId     String
-  auction       Auction  @relation(fields: [auctionId], references: [id])
+  id        Int     @id @default(autoincrement())
+  auctionId String
+  auction   Auction @relation(fields: [auctionId], references: [id])
 
-  companyId     String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  companyId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("auction_participants")
 }

@@ -48,6 +48,7 @@ export class AuctionService {
         images: dto.images.map(i => i.downloadUrl),
         documents: dto.documents.map(d => d.downloadUrl),
         isActive: true,
+        isPublic: true,
       },
     });
 
@@ -59,6 +60,10 @@ export class AuctionService {
       await this.createParticipants(createdAuction.id, dto.participants);
     }
 
+    if (dto.isPublic) {
+      await this.createPublicParticipants(createdAuction.id);
+    }
+
     const rawAuction = await this.prisma.auction.findUnique({
       where: { id: createdAuction.id },
       include: { positions: true, participants: true },
@@ -68,10 +73,14 @@ export class AuctionService {
       rawAuction.positions.map((pos) => this.enrichPosition(pos)),
     );
 
+    const enrichedParticipants = await Promise.all(
+      rawAuction.participants.map((p) => this.enrichParticipant(p)),
+    );
+
     const result = {
       ...rawAuction,
       positions: enrichedPositions,
-      participants: dto.participants
+      participants: enrichedParticipants
     };
 
     return result;
@@ -277,5 +286,18 @@ export class AuctionService {
       ...rest,
       company: companyData,
     };
+  }
+
+  private async createPublicParticipants(auctionId: string) {
+    const companies = await lastValueFrom(
+      this.authClient.send('getAllCompaniesIds', {}),
+    );
+
+    const data = companies.map((c) => ({
+      auctionId,
+      companyId: c.id,
+    }));
+
+    await this.prisma.auctionParticipants.createMany({ data });
   }
 }
