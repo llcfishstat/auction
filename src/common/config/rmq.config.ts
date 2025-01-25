@@ -6,6 +6,7 @@ export default registerAs(
   (): Record<string, unknown> => ({
     uri: process.env.RABBITMQ_URL,
     auth: process.env.RABBITMQ_AUTH_QUEUE,
-    auction: process.env.RABBITMQ_AUCTION_QUEUE
+    auction: process.env.RABBITMQ_AUCTION_QUEUE,
+    post: process.env.RABBITMQ_POST_QUEUE
   }),
 );

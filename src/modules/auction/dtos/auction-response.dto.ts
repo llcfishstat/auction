@@ -1,9 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { AuctionType } from '@prisma/client';
 
-export class AuctionPositionResponseDto {
+export class DictionaryItemDto {
   @ApiProperty({ example: 1 })
-  productId: number;
+  id: number;
+
+  @ApiProperty({ example: 'Акула полярная' })
+  name: string;
+}
+
+export class AuctionPositionResponseDto {
+  @ApiProperty({
+    example: { id: 1, name: 'Акула полярная' },
+    nullable: false,
+  })
+  product: DictionaryItemDto;
 
   @ApiProperty({ example: 1200 })
   totalVolume: number;
@@ -11,20 +22,35 @@ export class AuctionPositionResponseDto {
   @ApiProperty({ example: 120 })
   price: number;
 
-  @ApiProperty({ example: 1, nullable: true })
-  cuttingTypeId?: number;
+  @ApiProperty({
+    example: { id: 1, name: 'БГ' },
+    nullable: true,
+  })
+  cutting?: DictionaryItemDto;
 
-  @ApiProperty({ example: 1, nullable: true })
-  sortId?: number;
+  @ApiProperty({
+    example: { id: 1, name: '2-й сорт' },
+    nullable: true,
+  })
+  sort?: DictionaryItemDto;
 
-  @ApiProperty({ example: 1, nullable: true })
-  catchAreaId?: number;
+  @ApiProperty({
+    example: { id: 1, name: '61.01: Западно-Беринговоморская зона...' },
+    nullable: true,
+  })
+  catchArea?: DictionaryItemDto;
 
-  @ApiProperty({ example: 1, nullable: true })
-  processingTypeId?: number;
+  @ApiProperty({
+    example: { id: 2, name: 'Мороженая' },
+    nullable: true,
+  })
+  processingType?: DictionaryItemDto;
 
-  @ApiProperty({ example: 1, nullable: true })
-  sizeId?: number;
+  @ApiProperty({
+    example: { id: 3, name: '3S' },
+    nullable: true,
+  })
+  size?: DictionaryItemDto;
 }
 
 export class AuctionResponseDto {

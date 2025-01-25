@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from 'src/common/services/prisma.service';
-import { AuctionType, Prisma } from '@prisma/client';
+import { AuctionPosition, AuctionType, Prisma } from '@prisma/client';
 
 import {
   AuctionCreateDto,
@@ -13,14 +13,17 @@ import {
 } from 'src/modules/auction/dtos/auction-create.dto';
 import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
 import { AuctionResponseDto } from 'src/modules/auction/dtos/auction-response.dto';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class AuctionService {
   constructor(
     private readonly prisma: PrismaService,
     @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
+    @Inject('POST_SERVICE') private readonly postClient: ClientProxy,
   ) {
     this.authClient.connect();
+    this.postClient.connect();
   }
 
   async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {
@@ -52,7 +55,21 @@ export class AuctionService {
       await this.createPositions(createdAuction.id, dto.positions);
     }
 
-    return this.getAuctionById(createdAuction.id);
+    const rawAuction = await this.prisma.auction.findUnique({
+      where: { id: createdAuction.id },
+      include: { positions: true },
+    });
+
+    const enrichedPositions = await Promise.all(
+      rawAuction.positions.map((pos) => this.enrichPosition(pos)),
+    );
+
+    const result = {
+      ...rawAuction,
+      positions: enrichedPositions,
+    };
+
+    return result;
   }
 
   private async createPositions(
@@ -76,22 +93,27 @@ export class AuctionService {
   async getAuctionById(auctionId: string) {
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
-      include: {
-        positions: true
-      },
+      include: { positions: true },
     });
     if (!auction) {
       throw new NotFoundException(`Аукцион с ID="${auctionId}" не найден`);
     }
-    return auction;
+
+    const enrichedPositions = await Promise.all(
+      auction.positions.map((pos) => this.enrichPosition(pos)),
+    );
+    return {
+      ...auction,
+      positions: enrichedPositions,
+    };
   }
 
   async getAuctionsList(
     type?: AuctionType,
     page = 1,
     limit = 10,
-    sort?: 'asc' | 'desc',  // новый
-    search?: string,        // новый
+    sort?: 'asc' | 'desc',
+    search?: string,
   ): Promise<{ data: AuctionResponseDto[]; total: number }> {
     const where: Prisma.AuctionWhereInput = {};
 
@@ -112,12 +134,11 @@ export class AuctionService {
     let orderBy: Prisma.AuctionOrderByWithRelationInput = {
       createdAt: 'desc',
     };
-
     if (sort === 'asc') {
       orderBy = { createdAt: 'asc' };
     }
-
-    const [data, total] = await Promise.all([
+    console.log('where=', JSON.stringify(where));
+    const [rawAuctions, total] = await Promise.all([
       this.prisma.auction.findMany({
         where,
         include: { positions: true },
@@ -125,10 +146,22 @@ export class AuctionService {
         skip,
         take,
       }),
-      this.prisma.auction.count({
-        where,
-      }),
+      this.prisma.auction.count({ where }),
     ]);
+    console.log(rawAuctions);
+
+    const data = await Promise.all(
+      rawAuctions.map(async (auction) => {
+        console.log('[DEBUG] auction.id=', auction.id, ', positions=', auction.positions);
+        const enrichedPositions = await Promise.all(
+          auction.positions.map((pos) => this.enrichPosition(pos)),
+        );
+        return {
+          ...auction,
+          positions: enrichedPositions,
+        };
+      }),
+    );
 
     return { data, total };
   }
@@ -137,9 +170,7 @@ export class AuctionService {
     const oldAuction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
     });
-    if (!oldAuction) {
-      throw new NotFoundException('Аукцион не найден');
-    }
+    if (!oldAuction) throw new NotFoundException('Аукцион не найден');
 
     const updated = await this.prisma.auction.update({
       where: { id: auctionId },
@@ -150,7 +181,14 @@ export class AuctionService {
       include: { positions: true },
     });
 
-    return updated;
+    const enrichedPositions = await Promise.all(
+      updated.positions.map((pos) => this.enrichPosition(pos))
+    );
+
+    return {
+      ...updated,
+      positions: enrichedPositions,
+    }
   }
 
   async removeAuction(auctionId: string) {
@@ -165,5 +203,38 @@ export class AuctionService {
       where: { id: auctionId },
       data: { isActive: false },
     });
+  }
+
+  async enrichPosition(pos: AuctionPosition) {
+    const {
+      cuttingTypeId,
+      sortId,
+      catchAreaId,
+      processingTypeId,
+      sizeId,
+      productId,
+      ...rest
+    } = pos;
+
+    const postData = await lastValueFrom(
+      this.postClient.send('getAllByIds', {
+        cuttingTypeId,
+        sortId,
+        catchAreaId,
+        processingTypeId,
+        sizeId,
+        productId,
+      }),
+    );
+
+    return {
+      ...rest,
+      product: postData.product ?? null,
+      cutting: postData.cutting ?? null,
+      sort: postData.sort ?? null,
+      catchArea: postData.catchArea ?? null,
+      processingType: postData.processingType ?? null,
+      size: postData.size ?? null,
+    };
   }
 }

@@ -25,6 +25,21 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         }),
         inject: [ConfigService],
       },
+      {
+        name: 'POST_SERVICE',
+        imports: [ConfigModule],
+        useFactory: async (configService: ConfigService) => ({
+          transport: Transport.RMQ,
+          options: {
+            urls: [`${configService.get('rmq.uri')}`],
+            queue: `${configService.get('rmq.post')}`,
+            queueOptions: {
+              durable: false,
+            },
+          },
+        }),
+        inject: [ConfigService],
+      },
     ]),
   ],
   providers: [PrismaService, AuctionService],
