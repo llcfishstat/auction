@@ -125,6 +125,11 @@ export class AuctionService {
       throw new NotFoundException(`Аукцион с ID="${auctionId}" не найден`);
     }
 
+    let createdByCompany = null;
+    if (auction.companyId) {
+      createdByCompany = await this.enrichCompany(auction.companyId);
+    }
+
     const enrichedPositions = await Promise.all(
       auction.positions.map((pos) => this.enrichPosition(pos)),
     );
@@ -137,6 +142,7 @@ export class AuctionService {
       ...auction,
       positions: enrichedPositions,
       participants: enrichedParticipants,
+      company: createdByCompany,
     };
   }
 
@@ -299,5 +305,12 @@ export class AuctionService {
     }));
 
     await this.prisma.auctionParticipants.createMany({ data });
+  }
+
+  private async enrichCompany(companyId: string) {
+    const companyData = await lastValueFrom(
+      this.authClient.send('getCompanyById', { companyId }),
+    );
+    return companyData;
   }
 }
