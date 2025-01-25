@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from 'src/common/services/prisma.service';
-import { AuctionPosition, AuctionType, Prisma } from '@prisma/client';
+import { AuctionParticipants, AuctionPosition, AuctionType, Prisma } from '@prisma/client';
 
 import {
   AuctionCreateDto, AuctionCreateParticipantDto,
@@ -110,7 +110,7 @@ export class AuctionService {
   async getAuctionById(auctionId: string) {
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
-      include: { positions: true },
+      include: { positions: true, participants: true },
     });
     if (!auction) {
       throw new NotFoundException(`Аукцион с ID="${auctionId}" не найден`);
@@ -119,9 +119,15 @@ export class AuctionService {
     const enrichedPositions = await Promise.all(
       auction.positions.map((pos) => this.enrichPosition(pos)),
     );
+
+    const enrichedParticipants = await Promise.all(
+      auction.participants.map((p) => this.enrichParticipant(p)),
+    );
+
     return {
       ...auction,
       positions: enrichedPositions,
+      participants: enrichedParticipants,
     };
   }
 
@@ -253,6 +259,18 @@ export class AuctionService {
       catchArea: postData.catchArea ?? null,
       processingType: postData.processingType ?? null,
       size: postData.size ?? null,
+    };
+  }
+
+  private async enrichParticipant(participant: AuctionParticipants) {
+    const { auctionId, ...rest } = participant;
+    const companyData = await lastValueFrom(
+      this.authClient.send('getCompanyById', { companyId: participant.companyId }),
+    );
+
+    return {
+      ...rest,
+      company: companyData,
     };
   }
 }
