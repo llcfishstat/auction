@@ -202,16 +202,21 @@ export class AuctionService {
         ...dto,
         updatedAt: new Date(),
       },
-      include: { positions: true },
+      include: { positions: true, participants: true },
     });
 
     const enrichedPositions = await Promise.all(
       updated.positions.map((pos) => this.enrichPosition(pos))
     );
 
+    const enrichedParticipants = await Promise.all(
+      updated.participants.map((participant) => this.enrichParticipant(participant))
+    );
+
     return {
       ...updated,
       positions: enrichedPositions,
+      participants: enrichedParticipants,
     }
   }
 
