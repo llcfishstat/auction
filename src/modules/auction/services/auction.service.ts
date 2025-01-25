@@ -8,7 +8,7 @@ import { PrismaService } from 'src/common/services/prisma.service';
 import { AuctionPosition, AuctionType, Prisma } from '@prisma/client';
 
 import {
-  AuctionCreateDto,
+  AuctionCreateDto, AuctionCreateParticipantDto,
   AuctionCreatePositionDto,
 } from 'src/modules/auction/dtos/auction-create.dto';
 import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
@@ -55,9 +55,13 @@ export class AuctionService {
       await this.createPositions(createdAuction.id, dto.positions);
     }
 
+    if (dto.participants && dto.participants.length > 0) {
+      await this.createParticipants(createdAuction.id, dto.participants);
+    }
+
     const rawAuction = await this.prisma.auction.findUnique({
       where: { id: createdAuction.id },
-      include: { positions: true },
+      include: { positions: true, participants: true },
     });
 
     const enrichedPositions = await Promise.all(
@@ -67,6 +71,7 @@ export class AuctionService {
     const result = {
       ...rawAuction,
       positions: enrichedPositions,
+      participants: dto.participants
     };
 
     return result;
@@ -88,6 +93,18 @@ export class AuctionService {
       sizeId: pos.size,
     }));
     await this.prisma.auctionPosition.createMany({data});
+  }
+
+  private async createParticipants(
+    auctionId: string,
+    participants: AuctionCreateParticipantDto[],
+  ) {
+    const data = participants.map((part) => ({
+      auctionId,
+      companyId: part.companyId,
+    }));
+
+    await this.prisma.auctionParticipants.createMany({ data });
   }
 
   async getAuctionById(auctionId: string) {
@@ -141,7 +158,7 @@ export class AuctionService {
     const [rawAuctions, total] = await Promise.all([
       this.prisma.auction.findMany({
         where,
-        include: { positions: true },
+        include: { positions: true, participants: true },
         orderBy,
         skip,
         take,
@@ -152,13 +169,14 @@ export class AuctionService {
 
     const data = await Promise.all(
       rawAuctions.map(async (auction) => {
-        console.log('[DEBUG] auction.id=', auction.id, ', positions=', auction.positions);
+
         const enrichedPositions = await Promise.all(
           auction.positions.map((pos) => this.enrichPosition(pos)),
         );
         return {
           ...auction,
           positions: enrichedPositions,
+          participants: auction.participants,
         };
       }),
     );

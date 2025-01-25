@@ -53,6 +53,26 @@ export class AuctionPositionResponseDto {
   size?: DictionaryItemDto;
 }
 
+export class AuctionParticipantResponseDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'company-id-123' })
+  companyId: string;
+
+  @ApiProperty({
+    example: '2025-01-25T00:16:04.032Z',
+    description: 'Когда пользователь присоединился',
+  })
+  createdAt: Date;
+
+  @ApiProperty({
+    example: '2025-01-25T00:16:04.032Z',
+    description: 'Когда участник обновил информацию',
+  })
+  updatedAt: Date;
+}
+
 export class AuctionResponseDto {
   @ApiProperty({ example: 'fsdffd-dsfdsf-sdfdsff' })
   id: string;
@@ -87,8 +107,20 @@ export class AuctionResponseDto {
   @ApiProperty({ example: 'Some comment', nullable: true })
   comment?: string;
 
+  @ApiProperty({ example: 'Starts at' })
+  startsAt: Date;
+
+  @ApiProperty({ example: 'Ends at' })
+  endsAt: Date;
+
+  @ApiProperty({ example: 'Expiration' })
+  expiration: number;
+
   @ApiProperty({ type: [AuctionPositionResponseDto] })
   positions: AuctionPositionResponseDto[];
+
+  @ApiProperty({ type: [AuctionParticipantResponseDto] })
+  participants: AuctionParticipantResponseDto[];
 
 }
 

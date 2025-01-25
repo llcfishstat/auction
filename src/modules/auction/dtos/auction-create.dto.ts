@@ -11,6 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AuctionParticipantResponseDto } from './auction-response.dto';
 
 export class FileItemDto {
   @ApiProperty({ example: 1737376136663 })
@@ -70,6 +71,12 @@ export class AuctionCreatePositionDto {
   @IsOptional()
   @IsInt()
   size?: number;
+}
+
+export class AuctionCreateParticipantDto {
+  @ApiProperty({ example: 'company-123' })
+  @IsString()
+  companyId: string;
 }
 
 export class AuctionCreateDto {
@@ -181,4 +188,8 @@ export class AuctionCreateDto {
   @ValidateNested({ each: true })
   @Type(() => AuctionCreatePositionDto)
   positions?: AuctionCreatePositionDto[];
+
+  @ApiProperty({ type: [AuctionParticipantResponseDto] })
+  @IsArray()
+  participants?: AuctionParticipantResponseDto[];
 }
