@@ -14,6 +14,7 @@ import {
 import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
 import { AuctionResponseDto } from 'src/modules/auction/dtos/auction-response.dto';
 import { lastValueFrom } from 'rxjs';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class AuctionService {
@@ -24,6 +25,25 @@ export class AuctionService {
   ) {
     this.authClient.connect();
     this.postClient.connect();
+  }
+
+  @Cron(CronExpression.EVERY_MINUTE)
+  async handleCron() {
+    console.log('Check auctions with exp date')
+    const now = new Date();
+    const auctionsToClose = await this.prisma.auction.findMany({
+      where: {
+        isActive: true,
+        endsAt: { lte: now },
+      },
+    });
+
+    if (auctionsToClose.length > 0) {
+      await this.prisma.auction.updateMany({
+        where: { id: { in: auctionsToClose.map(a => a.id) } },
+        data: { isActive: false },
+      });
+    }
   }
 
   async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {

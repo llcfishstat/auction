@@ -11,13 +11,15 @@ import { join } from 'path';
 import { PrismaService } from 'src/common/services/prisma.service';
 import { AuctionModule } from 'src/modules/auction/auction.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-import { ResponseInterceptor } from '../common/interceptors/response.interceptor';
+import { ResponseInterceptor } from 'src/common/interceptors/response.interceptor';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
     imports: [
         TerminusModule,
         CommonModule,
         AuctionModule,
+        ScheduleModule.forRoot(),
         I18nModule.forRoot({
             fallbackLanguage: 'en',
             loaderOptions: {
