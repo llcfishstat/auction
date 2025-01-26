@@ -47,6 +47,12 @@ export class AuctionService {
   }
 
   async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {
+    const baseStartsAt = dto.startsAt
+      ? new Date(dto.startsAt)
+      : new Date();
+
+    const endsAtDate = new Date(baseStartsAt.getTime() + dto.expiration * 60 * 60 * 1000);
+
     const createdAuction = await this.prisma.auction.create({
       data: {
         type: dto.type,
@@ -55,8 +61,8 @@ export class AuctionService {
         stepPrice: dto.stepPrice,
         buyoutPrice: dto.buyoutPrice,
         comment: dto.comment,
-        startsAt: dto.startsAt,
-        endsAt: dto.endsAt,
+        startsAt: dto.startsAt ? new Date(dto.startsAt) : baseStartsAt,
+        endsAt: endsAtDate,
         companyId: dto.companyId,
         expiration: dto.expiration,
         manufactureDate: dto.manufactureDate,
