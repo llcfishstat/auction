@@ -51,7 +51,7 @@ export class AuctionService {
       ? new Date(dto.startsAt)
       : new Date();
 
-    const endsAtDate = new Date(baseStartsAt.getTime() + dto.expiration * 60 * 60 * 1000);
+    const endsAtDate = new Date(baseStartsAt.getTime() + dto.auctionDuration * 60 * 60 * 1000);
 
     const createdAuction = await this.prisma.auction.create({
       data: {
