@@ -362,6 +362,7 @@ export class AuctionService {
   }
 
   async makeBid(auctionId: string, bidDto: AuctionBidDto, user: IAuthUser) {
+    console.log(bidDto);
     const auction = await this.prisma.auction.findUnique({
       where: { id: auctionId },
       include: { positions: true },
@@ -383,7 +384,7 @@ export class AuctionService {
       (acc, p) => acc + p.price * p.totalVolume,
       0,
     );
-    const requiredMinSum = auction.initialPrice + auction.stepPrice;
+    const requiredMinSum = auction.stepPrice;
     if (sumFromBid < requiredMinSum) {
       throw new BadRequestException(`Сумма всех позиций (${sumFromBid}) ниже требуемой суммы: ${requiredMinSum}`);
     }
@@ -401,6 +402,8 @@ export class AuctionService {
       }
     }
 
+    const newStepPrice = sumFromBid;
+
     await this.prisma.$transaction(async (tx) => {
 
       for (const pos of bidDto.positions) {
@@ -415,7 +418,7 @@ export class AuctionService {
       await tx.auction.update({
         where: { id: auctionId },
         data: {
-          stepPrice: bidDto.stepPrice,
+          stepPrice: newStepPrice,
           lastStepPriceUserId: user.id,
         },
       });

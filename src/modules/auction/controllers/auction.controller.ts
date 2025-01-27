@@ -26,15 +26,16 @@ import {
   AuctionListResponseDto,
   AuctionRemoveResponseDto,
 } from 'src/modules/auction/dtos/auction-response.dto';
-import { AuctionBidDto } from '../dtos/auction.bid.position.dto';
+import { AuctionBidDto } from 'src/modules/auction/dtos/auction.bid.position.dto';
 
 @ApiTags('auction')
-@ApiBearerAuth('accessToken')
+
 @Controller({ version: '1', path: '/auction' })
 export class AuctionController {
   constructor(private readonly auctionService: AuctionService) {}
 
   @Post()
+  @ApiBearerAuth('accessToken')
   @ApiCreatedResponse({
     type: AuctionResponseDto,
     description: 'Creates a new auction and returns its data.',
@@ -48,6 +49,7 @@ export class AuctionController {
   }
 
   @Get()
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     type: AuctionListResponseDto,
     description: 'Returns a list of auctions (optionally filtered by type).',
@@ -72,6 +74,7 @@ export class AuctionController {
   }
 
   @Get(':auctionId')
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     type: AuctionResponseDto,
     description: 'Returns one auction by ID.',
@@ -81,6 +84,7 @@ export class AuctionController {
   }
 
   @Put(':auctionId')
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     type: AuctionResponseDto,
     description: 'Updates auction and returns the updated entity.',
@@ -94,6 +98,7 @@ export class AuctionController {
   }
 
   @Delete(':auctionId')
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     type: AuctionRemoveResponseDto,
     description: 'Removes an auction and returns confirmation data.',
@@ -106,6 +111,7 @@ export class AuctionController {
   }
 
   @Post(':auctionId/bid')
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     description: 'Makes a bid on an auction. Returns updated auction or success info.',
   })
@@ -114,10 +120,12 @@ export class AuctionController {
     @Param('auctionId') auctionId: string,
     @Body() bidDto: AuctionBidDto,
   ): Promise<AuctionResponseDto>  {
+    console.log(user)
     return this.auctionService.makeBid(auctionId, bidDto, user);
   }
 
   @Post(':auctionId/buyout')
+  @ApiBearerAuth('accessToken')
   @ApiOkResponse({
     description: 'Performs a buyout on the auction, making it inactive and saving the winner.',
   })
