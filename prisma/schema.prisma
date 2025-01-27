@@ -31,11 +31,13 @@ model Auction {
   createdAt           DateTime    @default(now())
   updatedAt           DateTime    @updatedAt
 
-  companyId  String?
-  chatroomId Int
+  companyId           String?
+  chatroomId          Int
+  lastStepPriceUserId String?
 
-  positions    AuctionPosition[]
-  participants AuctionParticipants[]
+  positions     AuctionPosition[]
+  participants  AuctionParticipants[]
+  AuctionWinner AuctionWinner[]
 
   @@map("auctions")
 }
@@ -69,6 +71,17 @@ model AuctionParticipants {
   updatedAt DateTime @updatedAt
 
   @@map("auction_participants")
+}
+
+model AuctionWinner {
+  id        String   @id @default(uuid())
+  auctionId String
+  userId    String
+  createdAt DateTime @default(now())
+
+  auction Auction @relation(fields: [auctionId], references: [id])
+
+  @@map("auction_winners")
 }
 
 enum AuctionType {

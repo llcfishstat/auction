@@ -130,6 +130,12 @@ export class CompanyDto {
 
 export class AuctionPositionResponseDto {
     @ApiProperty({
+        description: 'Company ID',
+        example: 'cf024c64-3b2c-4c57-bc83-233d36ad1d66',
+    })
+    id: string;
+
+    @ApiProperty({
         example: { id: 1, name: 'Акула полярная' },
         nullable: false,
     })

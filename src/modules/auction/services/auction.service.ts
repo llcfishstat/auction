@@ -1,7 +1,7 @@
 import {
   Injectable,
   NotFoundException,
-  Inject,
+  Inject, BadRequestException, ConflictException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { PrismaService } from 'src/common/services/prisma.service';
@@ -15,6 +15,8 @@ import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
 import { AuctionResponseDto } from 'src/modules/auction/dtos/auction-response.dto';
 import { lastValueFrom } from 'rxjs';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { AuctionBidDto } from 'src/modules/auction/dtos/auction.bid.position.dto';
+import { IAuthUser } from 'src/modules/auction/interfaces/auction.interface';
 
 @Injectable()
 export class AuctionService {
@@ -29,8 +31,9 @@ export class AuctionService {
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
-    console.log('Check auctions with exp date')
+    console.log('Check auctions with exp date');
     const now = new Date();
+
     const auctionsToClose = await this.prisma.auction.findMany({
       where: {
         isActive: true,
@@ -38,10 +41,28 @@ export class AuctionService {
       },
     });
 
-    if (auctionsToClose.length > 0) {
-      await this.prisma.auction.updateMany({
-        where: { id: { in: auctionsToClose.map(a => a.id) } },
-        data: { isActive: false },
+    if (!auctionsToClose.length) return;
+
+    for (const auction of auctionsToClose) {
+      const winnerUserId = auction.lastStepPriceUserId;
+
+      await this.prisma.$transaction(async (tx) => {
+        await tx.auction.update({
+          where: { id: auction.id },
+          data: {
+            isActive: false,
+            updatedAt: new Date(),
+          },
+        });
+
+        if (winnerUserId) {
+          await tx.auctionWinner.create({
+            data: {
+              auctionId: auction.id,
+              userId: winnerUserId,
+            },
+          });
+        }
       });
     }
   }
@@ -338,5 +359,104 @@ export class AuctionService {
       this.authClient.send('getCompanyById', { companyId }),
     );
     return companyData;
+  }
+
+  async makeBid(auctionId: string, bidDto: AuctionBidDto, user: IAuthUser) {
+    const auction = await this.prisma.auction.findUnique({
+      where: { id: auctionId },
+      include: { positions: true },
+    });
+
+    if (!auction) {
+      throw new NotFoundException(`Аукцион c ID=${auctionId} не найден`);
+    }
+
+    if (!auction.isActive) {
+      throw new BadRequestException('Аукцион уже завершён');
+    }
+
+    if (auction.stepPrice !== bidDto.stepPrice) {
+      throw new ConflictException('Step price was changed. Please refresh the page.');
+    }
+
+    const sumFromBid = bidDto.positions.reduce(
+      (acc, p) => acc + p.price * p.totalVolume,
+      0,
+    );
+    const requiredMinSum = auction.initialPrice + auction.stepPrice;
+    if (sumFromBid < requiredMinSum) {
+      throw new BadRequestException(`Сумма всех позиций (${sumFromBid}) ниже требуемой суммы: ${requiredMinSum}`);
+    }
+
+    for (const pos of bidDto.positions) {
+      const dbPos = auction.positions.find((ap) => ap.id === pos.id);
+      if (!dbPos) {
+        throw new NotFoundException(`Позиция с ID=${pos.id} не найдена в аукционе`);
+      }
+
+      if (pos.price < dbPos.price) {
+        throw new BadRequestException(
+          `Position ${pos.id}: new price ${pos.price} is below the current DB price ${dbPos.price}`,
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+
+      for (const pos of bidDto.positions) {
+        await tx.auctionPosition.update({
+          where: { id: pos.id },
+          data: {
+            price: pos.price,
+          },
+        });
+      }
+
+      await tx.auction.update({
+        where: { id: auctionId },
+        data: {
+          stepPrice: bidDto.stepPrice,
+          lastStepPriceUserId: user.id,
+        },
+      });
+    });
+
+    const updatedAuction = await this.getAuctionById(auctionId);
+
+    return updatedAuction;
+  }
+
+  async buyoutAuction(auctionId: string, user: IAuthUser): Promise<AuctionResponseDto> {
+    const auction = await this.prisma.auction.findUnique({
+      where: { id: auctionId },
+    });
+
+    if (!auction) {
+      throw new NotFoundException(`Аукцион с ID=${auctionId} не найден`);
+    }
+
+    if (!auction.isActive) {
+      throw new BadRequestException('Аукцион уже завершён');
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.auction.update({
+        where: { id: auctionId },
+        data: {
+          isActive: false,
+          lastStepPriceUserId: user.id,
+        },
+      });
+
+      await tx.auctionWinner.create({
+        data: {
+          auctionId: auctionId,
+          userId: user.id,
+        },
+      });
+    });
+
+    const updatedAuction = await this.getAuctionById(auctionId);
+    return updatedAuction;
   }
 }

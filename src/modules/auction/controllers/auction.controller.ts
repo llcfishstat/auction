@@ -26,6 +26,7 @@ import {
   AuctionListResponseDto,
   AuctionRemoveResponseDto,
 } from 'src/modules/auction/dtos/auction-response.dto';
+import { AuctionBidDto } from '../dtos/auction.bid.position.dto';
 
 @ApiTags('auction')
 @ApiBearerAuth('accessToken')
@@ -102,5 +103,28 @@ export class AuctionController {
     @Param('auctionId') auctionId: string,
   ): Promise<AuctionRemoveResponseDto> {
     return this.auctionService.removeAuction(auctionId);
+  }
+
+  @Post(':auctionId/bid')
+  @ApiOkResponse({
+    description: 'Makes a bid on an auction. Returns updated auction or success info.',
+  })
+  async makeBid(
+    @AuthUser() user: IAuthUser,
+    @Param('auctionId') auctionId: string,
+    @Body() bidDto: AuctionBidDto,
+  ): Promise<AuctionResponseDto>  {
+    return this.auctionService.makeBid(auctionId, bidDto, user);
+  }
+
+  @Post(':auctionId/buyout')
+  @ApiOkResponse({
+    description: 'Performs a buyout on the auction, making it inactive and saving the winner.',
+  })
+  async buyoutAuction(
+    @AuthUser() user: IAuthUser,
+    @Param('auctionId') auctionId: string,
+  ): Promise<AuctionResponseDto> {
+    return this.auctionService.buyoutAuction(auctionId, user);
   }
 }
