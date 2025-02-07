@@ -274,7 +274,7 @@ export class AuctionResponseDto {
     company?: CompanyDto;
 
     @ApiProperty({ example: 0 })
-    chatroomId: number;
+    chatroomId: string;
 }
 
 export class AuctionListResponseDto {

@@ -32,7 +32,7 @@ model Auction {
   updatedAt           DateTime    @updatedAt
 
   companyId           String?
-  chatroomId          Int
+  chatroomId          String
   lastStepPriceUserId String?
 
   positions     AuctionPosition[]
