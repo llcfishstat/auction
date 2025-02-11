@@ -268,31 +268,14 @@ export class AuctionCreatePositionDto {
     @IsOptional()
     additionalServicesComment: string;
 
-    @ApiProperty({
-        description: 'Дата создания записи ',
-        example: '2025-01-01T12:00:00.000Z',
-    })
-    @Type(() => Date)
-    @IsDate()
-    @IsNotEmpty()
-    createdAt: Date;
-
-    @ApiProperty({
-        description: 'Дата обновления записи',
-        example: '2025-01-02T12:00:00.000Z',
-    })
-    @Type(() => Date)
-    @IsDate()
-    @IsNotEmpty()
-    updatedAt: Date;
-
-    @ApiProperty({
-        description: 'ID аукциона, к которому относится позиция',
-        example: 'auc-5678',
-    })
-    @IsString()
-    @IsNotEmpty()
-    auctionId: string;
+    // @ApiProperty({
+    //     description: 'Дата обновления записи',
+    //     example: '2025-01-02T12:00:00.000Z',
+    // })
+    // @Type(() => Date)
+    // @IsDate()
+    // @IsNotEmpty()
+    // updatedAt: Date;
 }
 
 export class AuctionCreateParticipantDto {
@@ -351,15 +334,6 @@ export class AuctionCreateDto {
     @IsOptional()
     startsAt?: Date;
 
-    @ApiPropertyOptional({
-        description: 'Дата и время окончания аукциона',
-        example: '2025-02-12T08:00:00.000Z',
-    })
-    @Type(() => Date)
-    @IsDate()
-    @IsOptional()
-    endsAt?: Date;
-
     @ApiProperty({
         description: 'Начальная цена',
         example: 10000,
@@ -388,8 +362,8 @@ export class AuctionCreateDto {
     buyoutPrice?: number;
 
     @ApiProperty({
-        description: 'Продолжительность аукциона в минутах (или в иных единицах)',
-        example: 120,
+        description: 'Продолжительность аукциона в часах',
+        example: 24,
     })
     @IsInt()
     @Min(1)
