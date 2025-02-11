@@ -34,7 +34,6 @@ export class AuctionService {
 
     @Cron(CronExpression.EVERY_MINUTE)
     async handleCron() {
-        console.log('Check auctions with exp date');
         const now = new Date();
 
         const auctionsToClose = await this.prisma.auction.findMany({
@@ -82,25 +81,23 @@ export class AuctionService {
                 initialPrice: dto.initialPrice,
                 stepPrice: dto.stepPrice,
                 buyoutPrice: dto.buyoutPrice,
-                comment: dto.comment,
                 startsAt: dto.startsAt ? new Date(dto.startsAt) : baseStartsAt,
                 endsAt: endsAtDate,
                 companyId: dto.companyId,
-                expiration: dto.expiration,
-                manufactureDate: dto.manufactureDate,
-                manufacturer: dto.manufacturer,
-                gost: dto.gost,
-                technicalConditions: dto.technicalConditions,
                 auctionDuration: dto.auctionDuration,
                 chatroomId: dto.chatroomId,
-                images: dto.images.map(i => i.downloadUrl),
-                documents: dto.documents.map(d => d.downloadUrl),
                 isActive: true,
                 isPublic: true,
             },
         });
 
         if (dto.positions && dto.positions.length > 0) {
+            if (dto.type === AuctionType.REGULAR && dto.positions.length > 1) {
+                throw new BadRequestException(
+                    `Для аукциона с типом ${AuctionType.REGULAR} нельзя добавить больше 1 позиции`,
+                );
+            }
+
             await this.createPositions(createdAuction.id, dto.positions);
         }
 
@@ -125,7 +122,7 @@ export class AuctionService {
             rawAuction.participants.map(p => this.enrichParticipant(p)),
         );
 
-        const result = {
+        const result: AuctionResponseDto = {
             ...rawAuction,
             positions: enrichedPositions,
             participants: enrichedParticipants,
@@ -135,16 +132,11 @@ export class AuctionService {
     }
 
     private async createPositions(auctionId: string, positions: AuctionCreatePositionDto[]) {
-        const data = positions.map(pos => ({
+        const data: Prisma.AuctionPositionCreateManyInput[] = positions.map(pos => ({
+            ...pos,
             auctionId,
-            productId: pos.productName,
-            totalVolume: pos.totalVolume,
-            price: pos.price,
-            cuttingTypeId: pos.cuttingType,
-            sortId: pos.sort,
-            catchAreaId: pos.catchArea,
-            processingTypeId: pos.processingType,
-            sizeId: pos.size,
+            images: pos.images.map(item => item.downloadUrl),
+            documents: pos.documents.map(item => item.downloadUrl),
         }));
         await this.prisma.auctionPosition.createMany({ data });
     }
@@ -294,8 +286,16 @@ export class AuctionService {
     }
 
     async enrichPosition(pos: AuctionPosition) {
-        const { cuttingTypeId, sortId, catchAreaId, processingTypeId, sizeId, productId, ...rest } =
-            pos;
+        const {
+            cuttingTypeId,
+            sortId,
+            catchAreaId,
+            processingTypeId,
+            sizeId,
+            productId,
+            additionalServices,
+            ...rest
+        } = pos;
 
         const postData = await lastValueFrom(
             this.postClient.send('getAllByIds', {
@@ -305,6 +305,7 @@ export class AuctionService {
                 processingTypeId,
                 sizeId,
                 productId,
+                additionalServices,
             }),
         );
 
@@ -316,6 +317,7 @@ export class AuctionService {
             catchArea: postData.catchArea ?? null,
             processingType: postData.processingType ?? null,
             size: postData.size ?? null,
+            additionalServices: postData.additionalServices ?? null,
         };
     }
 

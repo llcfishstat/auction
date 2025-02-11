@@ -9,27 +9,20 @@ datasource db {
 }
 
 model Auction {
-  id                  String      @id @default(uuid())
-  type                AuctionType @default(REGULAR)
-  title               String
-  isActive            Boolean     @default(true)
-  isPublic            Boolean     @default(true)
-  startsAt            DateTime?
-  endsAt              DateTime?
-  initialPrice        Int         @default(0)
-  stepPrice           Int         @default(0)
-  buyoutPrice         Int?
-  expiration          Int
-  manufactureDate     DateTime
-  manufacturer        String
-  gost                Boolean
-  technicalConditions Boolean
-  comment             String?
-  documents           String[]
-  images              String[]
-  auctionDuration     Int
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
+  id              String      @id @default(uuid())
+  type            AuctionType @default(REGULAR)
+  title           String
+  isActive        Boolean     @default(true)
+  isPublic        Boolean     @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  initialPrice    Int         @default(0)
+  stepPrice       Int         @default(0)
+  buyoutPrice     Int?
+  auctionDuration Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   companyId           String?
   chatroomId          String
@@ -43,20 +36,46 @@ model Auction {
 }
 
 model AuctionPosition {
-  id        String  @id @default(uuid())
-  auctionId String
-  auction   Auction @relation(fields: [auctionId], references: [id])
+  id String @id @default(uuid())
 
   productId        Int
-  totalVolume      Int
-  price            Int
-  cuttingTypeId    Int?
-  sortId           Int?
+  processingTypeId Int
+  cuttingTypeId    Int
+  sortId           Int
+  sizeId           Int
   catchAreaId      Int?
-  processingTypeId Int?
-  sizeId           Int?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+
+  expiration            Int
+  manufactureDate       DateTime
+  manufacturer          String
+  accompanyingDocuments String[]
+
+  images    String[]
+  documents String[]
+  comment   String?
+
+  storageName        String
+  onePieceWeight     Int
+  totalVolume        Int
+  storageAddress     String
+  storageTemperature Int
+  storateUnit        VolumeUnit
+
+  saleFromShip Boolean?
+  shipName     String?
+  arrivalPort  String?
+  arrivalDate  DateTime?
+
+  additionalServices        Int[]
+  additionalServicesComment String?
+
+  price Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  auctionId String
+  auction   Auction @relation(fields: [auctionId], references: [id])
 
   @@map("auction_positions")
 }

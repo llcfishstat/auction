@@ -1,18 +1,20 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { AuctionType } from '@prisma/client';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { AuctionType, VolumeUnit } from '@prisma/client';
 import {
     IsArray,
     IsBoolean,
-    IsDateString,
+    IsDate,
+    IsEnum,
     IsInt,
+    IsNotEmpty,
     IsNumber,
     IsOptional,
     IsString,
     IsUUID,
+    Min,
     ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { AuctionParticipantResponseDto } from './auction-response.dto';
 
 export class FileItemDto {
     @ApiProperty({ example: 1737376136663 })
@@ -35,95 +37,103 @@ export class FileItemDto {
 }
 
 export class AuctionCreatePositionDto {
-    @ApiProperty({ example: 1 })
-    @IsInt()
-    productName: number;
+    @ApiProperty({
+        description: 'Дата производства/выработки товара',
+        example: '2025-01-01T00:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsNotEmpty()
+    public manufactureDate: Date;
 
-    @ApiProperty({ example: 1200 })
-    @IsInt()
+    @ApiProperty({
+        description: 'Общий объём продукции (в единицах, заданных в storateUnit)',
+        example: 1000,
+    })
+    @IsNumber()
+    @IsNotEmpty()
     totalVolume: number;
 
-    @ApiProperty({ example: 120 })
-    @IsInt()
+    @ApiProperty({
+        description: 'Цена за всю позицию (или единицу, если предполагается)',
+        example: 15000,
+    })
+    @IsNumber()
+    @IsNotEmpty()
     price: number;
 
-    @ApiProperty({ example: 1 })
-    @IsOptional()
+    @ApiProperty({
+        description: 'Идентификатор товара',
+        example: 42,
+    })
     @IsInt()
-    cuttingType?: number;
+    @IsNotEmpty()
+    productId: number;
 
-    @ApiProperty({ example: 1 })
-    @IsOptional()
+    @ApiProperty({
+        description: 'Идентификатор типа обработки',
+        example: 101,
+    })
     @IsInt()
-    sort?: number;
+    @IsNotEmpty()
+    processingTypeId: number;
 
-    @ApiProperty({ example: 1 })
-    @IsOptional()
+    @ApiProperty({
+        description: 'Идентификатор типа разделки',
+        example: 202,
+    })
     @IsInt()
-    catchArea?: number;
+    @IsNotEmpty()
+    cuttingTypeId: number;
 
-    @ApiProperty({ example: 1 })
-    @IsOptional()
+    @ApiProperty({
+        description: 'Идентификатор сорта',
+        example: 303,
+    })
     @IsInt()
-    processingType?: number;
+    @IsNotEmpty()
+    sortId: number;
 
-    @ApiProperty({ example: 1 })
-    @IsOptional()
+    @ApiProperty({
+        description: 'Идентификатор размерной группы',
+        example: 404,
+    })
     @IsInt()
-    size?: number;
-}
+    @IsNotEmpty()
+    sizeId: number;
 
-export class AuctionCreateParticipantDto {
-    @ApiProperty({ example: 'company-123' })
+    @ApiProperty({
+        description: 'Район вылова',
+        example: 505,
+    })
+    @IsInt()
+    @IsNotEmpty()
+    catchAreaId: number;
+
+    @ApiProperty({
+        description: 'Срок годности (в сутках, днях и т.п.)',
+        example: 30,
+    })
+    @IsInt()
+    @IsNotEmpty()
+    expiration: number;
+
+    @ApiProperty({
+        description: 'Наименование/название производителя',
+        example: 'ООО «Рыбозавод»',
+    })
     @IsString()
-    companyId: string;
-}
-
-export class AuctionCreateDto {
-    @ApiProperty({ enum: AuctionType, example: AuctionType.REGULAR })
-    type: AuctionType;
-
-    @ApiProperty({ example: 'Auction Title' })
-    @IsString()
-    title: string;
-
-    @ApiProperty({ example: 0 })
-    @IsInt()
-    initialPrice: number;
-
-    @ApiProperty({ example: 0 })
-    @IsInt()
-    stepPrice: number;
-
-    @ApiProperty({ example: 0 })
-    @IsOptional()
-    @IsInt()
-    buyoutPrice?: number;
-
-    @ApiProperty({ example: '2025-01-20T12:14:03.010Z' })
-    @IsDateString()
-    manufactureDate: string;
-
-    @ApiProperty({ example: 'Some Manufacturer' })
-    @IsString()
+    @IsNotEmpty()
     manufacturer: string;
 
-    @ApiProperty({ example: true })
-    @IsBoolean()
-    gost: boolean;
-
-    @ApiProperty({ example: true })
-    @IsBoolean()
-    technicalConditions: boolean;
-
-    @ApiProperty({ example: true })
-    @IsBoolean()
-    isPublic: boolean;
-
-    @ApiProperty({ example: 'Some comment' })
+    @ApiProperty({
+        description: 'Список сопроводительных документов',
+        example: ['Сертификат качества', 'Паспорт безопасности'],
+    })
+    @IsArray()
+    @IsString({ each: true })
     @IsOptional()
-    @IsString()
-    comment?: string;
+    accompanyingDocuments: string[];
 
     @ApiProperty({
         type: [FileItemDto],
@@ -159,33 +169,248 @@ export class AuctionCreateDto {
     @Type(() => FileItemDto)
     documents: FileItemDto[];
 
-    @ApiProperty({ example: 3 })
-    @IsInt()
-    auctionDuration: number;
-
-    @ApiProperty({ example: '2025-01-20T15:00:00.000Z' })
-    @IsOptional()
-    @IsDateString()
-    startsAt?: string;
-
-    @ApiProperty({ example: '2025-01-20T18:00:00.000Z' })
-    @IsOptional()
-    @IsDateString()
-    endsAt?: string;
-
-    @ApiProperty({ example: '2025-02-01T00:00:00.000Z' })
-    @IsInt()
-    expiration: number;
-
-    @ApiProperty({ example: 'company-id-123' })
-    @IsOptional()
+    @ApiPropertyOptional({
+        description: 'Комментарий',
+        example: 'Есть небольшой дефект упаковки',
+    })
     @IsString()
+    @IsOptional()
+    comment: string;
+
+    @ApiProperty({
+        description: 'Наименование склада хранения',
+        example: 'Основной холодильник №1',
+    })
+    @IsString()
+    @IsNotEmpty()
+    storageName: string;
+
+    @ApiProperty({
+        description: 'Вес одной штуки',
+        example: 2.5,
+    })
+    @IsNumber()
+    @IsNotEmpty()
+    onePieceWeight: number;
+
+    @ApiProperty({
+        description: 'Адрес склада хранения',
+        example: 'г. Владивосток, ул. Приморская, 10',
+    })
+    @IsString()
+    @IsNotEmpty()
+    storageAddress: string;
+
+    @ApiProperty({
+        description: 'Температура хранения (в градусах)',
+        example: -18,
+    })
+    @IsNumber()
+    @IsNotEmpty()
+    storageTemperature: number;
+
+    @ApiProperty({
+        description: 'Единица измерения объёма (штук, кг, литры и т.д.)',
+        enum: VolumeUnit,
+        example: VolumeUnit.KG,
+    })
+    @IsEnum(VolumeUnit)
+    @IsNotEmpty()
+    storateUnit: VolumeUnit;
+
+    @ApiProperty({
+        description: 'Признак, что товар продаётся с борта судна',
+        example: true,
+    })
+    @IsBoolean()
+    @IsNotEmpty()
+    saleFromShip: boolean;
+
+    @ApiPropertyOptional({
+        description: 'Название судна (если saleFromShip = true)',
+        example: 'Рыболовецкое судно "Альбатрос"',
+    })
+    @IsString()
+    @IsOptional()
+    shipName: string;
+
+    @ApiPropertyOptional({
+        description: 'Порт прибытия (если saleFromShip = true)',
+        example: 'Порт Владивосток',
+    })
+    @IsString()
+    @IsOptional()
+    arrivalPort: string;
+
+    @ApiPropertyOptional({
+        description: 'Дата прибытия (если saleFromShip = true)',
+        example: '2025-02-10T08:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    arrivalDate: Date;
+
+    @ApiPropertyOptional({
+        description: 'Дополнительные услуги, указываются идентификаторы',
+        example: [1, 2, 3],
+    })
+    @IsArray()
+    @IsInt({ each: true })
+    @IsOptional()
+    additionalServices: number[];
+
+    @ApiPropertyOptional({
+        description: 'Комментарий к дополнительным услугам',
+        example: 'Может потребоваться перегрузка на другой склад',
+    })
+    @IsString()
+    @IsOptional()
+    additionalServicesComment: string;
+
+    @ApiProperty({
+        description: 'Дата создания записи ',
+        example: '2025-01-01T12:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsNotEmpty()
+    createdAt: Date;
+
+    @ApiProperty({
+        description: 'Дата обновления записи',
+        example: '2025-01-02T12:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsNotEmpty()
+    updatedAt: Date;
+
+    @ApiProperty({
+        description: 'ID аукциона, к которому относится позиция',
+        example: 'auc-5678',
+    })
+    @IsString()
+    @IsNotEmpty()
+    auctionId: string;
+}
+
+export class AuctionCreateParticipantDto {
+    @ApiProperty({ example: 'company-123' })
+    @IsString()
+    companyId: string;
+}
+
+export class AuctionCreateDto {
+    @ApiProperty({
+        description: 'Тип аукциона (REGULAR, SPECIAL и т.д.)',
+        example: AuctionType.REGULAR,
+    })
+    @IsEnum(AuctionType)
+    @IsNotEmpty()
+    type: AuctionType;
+
+    @ApiProperty({
+        description: 'Заголовок/название аукциона',
+        example: 'Аукцион по продаже рыбы',
+    })
+    @IsString()
+    @IsNotEmpty()
+    title: string;
+
+    @ApiPropertyOptional({
+        description: 'ID компании, к которой относится аукцион',
+        example: 'e18b81c0-4ada-468d-bd87-53d9b17348f0',
+    })
+    @IsUUID()
+    @IsOptional()
     companyId?: string;
 
-    @ApiProperty({ example: 'chatroomId-123' })
+    @ApiProperty({
+        description: 'Флаг: активен ли аукцион',
+        example: true,
+    })
+    @IsBoolean()
+    @IsNotEmpty()
+    isActive: boolean;
+
+    @ApiProperty({
+        description: 'Флаг: публичен ли аукцион',
+        example: true,
+    })
+    @IsBoolean()
+    @IsNotEmpty()
+    isPublic: boolean;
+
+    @ApiPropertyOptional({
+        description: 'Дата и время начала аукциона',
+        example: '2025-02-10T08:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
     @IsOptional()
+    startsAt?: Date;
+
+    @ApiPropertyOptional({
+        description: 'Дата и время окончания аукциона',
+        example: '2025-02-12T08:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    @IsOptional()
+    endsAt?: Date;
+
+    @ApiProperty({
+        description: 'Начальная цена',
+        example: 10000,
+    })
+    @IsInt()
+    @Min(0)
+    @IsNotEmpty()
+    initialPrice: number;
+
+    @ApiProperty({
+        description: 'Шаг цены (на сколько увеличивается цена за каждую ставку)',
+        example: 500,
+    })
+    @IsInt()
+    @Min(0)
+    @IsNotEmpty()
+    stepPrice: number;
+
+    @ApiPropertyOptional({
+        description: 'Цена выкупа (если участник хочет выкупить товар сразу)',
+        example: 20000,
+    })
+    @IsInt()
+    @Min(0)
+    @IsOptional()
+    buyoutPrice?: number;
+
+    @ApiProperty({
+        description: 'Продолжительность аукциона в минутах (или в иных единицах)',
+        example: 120,
+    })
+    @IsInt()
+    @Min(1)
+    @IsNotEmpty()
+    auctionDuration: number;
+
+    @ApiProperty({
+        description: 'ID чата для участников аукциона',
+        example: 'c2ed939d-7f03-45f9-a809-430293b0210e',
+    })
     @IsUUID()
-    chatroomId?: string;
+    @IsNotEmpty()
+    chatroomId: string;
+
+    @ApiPropertyOptional({
+        description: 'ID последнего пользователя, сделавшего ставку (может быть null)',
+        example: '3f9812fa-b08f-4f6b-a588-fcdca676b9cc',
+    })
+    @IsUUID()
+    @IsOptional()
+    lastStepPriceUserId?: string;
 
     @ApiProperty({ type: [AuctionCreatePositionDto] })
     @IsArray()
