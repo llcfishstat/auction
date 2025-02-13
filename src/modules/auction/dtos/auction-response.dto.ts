@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { $Enums, Auction, AuctionPosition, AuctionType, VolumeUnit } from '@prisma/client';
+import { AuctionType, VolumeUnit } from '@prisma/client';
 
 export class DictionaryItemDto {
     @ApiProperty({ example: 1 })
@@ -357,6 +357,9 @@ export class AuctionResponseDto {
 
     @ApiProperty({ example: 0 })
     chatroomId: string;
+
+    @ApiProperty({ example: '283336262', description: 'Серийный номер аукциона' })
+    serialNumber;
 }
 
 export class AuctionListResponseDto {

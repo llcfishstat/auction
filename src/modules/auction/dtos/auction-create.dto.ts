@@ -286,7 +286,8 @@ export class AuctionCreateParticipantDto {
 
 export class AuctionCreateDto {
     @ApiProperty({
-        description: 'Тип аукциона (REGULAR, SPECIAL и т.д.)',
+        description: 'Тип аукциона (REGULAR, COLLECTIVE и т.д.)',
+        enum: AuctionType,
         example: AuctionType.REGULAR,
     })
     @IsEnum(AuctionType)

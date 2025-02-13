@@ -88,10 +88,7 @@ export class AuctionController {
         type: AuctionRemoveResponseDto,
         description: 'Removes an auction and returns confirmation data.',
     })
-    async removeAuction(
-        @AuthUser() user: IAuthUser,
-        @Param('auctionId') auctionId: string,
-    ): Promise<AuctionRemoveResponseDto> {
+    async removeAuction(@Param('auctionId') auctionId: string): Promise<AuctionRemoveResponseDto> {
         return this.auctionService.removeAuction(auctionId);
     }
 

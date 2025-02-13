@@ -72,15 +72,7 @@ export class AuctionService {
     async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {
         const baseStartsAt = dto.startsAt ? new Date(dto.startsAt) : new Date();
 
-        console.log('dto.auctionDuration: ', dto.auctionDuration);
-
-        console.log('new Date(): ', new Date());
-        console.log('new Date(dto.startsAt): ', new Date(dto.startsAt));
-        console.log('baseStartsAt: ', baseStartsAt);
-
         const endsAtDate = new Date(baseStartsAt.getTime() + dto.auctionDuration * 60 * 60 * 1000);
-
-        console.log('endsAtDate: ', endsAtDate);
 
         const createdAuction = await this.prisma.auction.create({
             data: {
@@ -96,6 +88,7 @@ export class AuctionService {
                 chatroomId: dto.chatroomId,
                 isActive: true,
                 isPublic: true,
+                serialNumber: Math.floor(Math.random() * 900000000) + 100000000,
             },
         });
 
@@ -220,7 +213,7 @@ export class AuctionService {
         if (sort === 'asc') {
             orderBy = { createdAt: 'asc' };
         }
-        console.log('where=', JSON.stringify(where));
+
         const [rawAuctions, total] = await Promise.all([
             this.prisma.auction.findMany({
                 where,
@@ -231,7 +224,6 @@ export class AuctionService {
             }),
             this.prisma.auction.count({ where }),
         ]);
-        console.log(rawAuctions);
 
         const data = await Promise.all(
             rawAuctions.map(async auction => {
@@ -360,7 +352,6 @@ export class AuctionService {
     }
 
     async makeBid(auctionId: string, bidDto: AuctionBidDto, user: IAuthUser) {
-        console.log(bidDto);
         const auction = await this.prisma.auction.findUnique({
             where: { id: auctionId },
             include: { positions: true },
