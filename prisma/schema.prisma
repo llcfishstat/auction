@@ -10,6 +10,7 @@ datasource db {
 
 model Auction {
   id              String      @id @default(uuid())
+  serialNumber    Int         @unique @map("serial_number")
   type            AuctionType @default(REGULAR)
   title           String
   isActive        Boolean     @default(true)
