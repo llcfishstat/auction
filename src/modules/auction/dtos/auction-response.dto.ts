@@ -157,7 +157,7 @@ export class AuctionPositionResponseDto {
         description: 'Вес одной штуки',
         example: 2.5,
     })
-    onePieceWeight: number;
+    onePieceUnit: number;
 
     @ApiProperty({
         description: 'Адрес склада хранения',
@@ -188,7 +188,7 @@ export class AuctionPositionResponseDto {
         description: 'Название судна (если saleFromShip = true)',
         example: 'Рыболовецкое судно "Альбатрос"',
     })
-    shipName: string;
+    shipName?: string;
 
     @ApiPropertyOptional({
         description: 'Порт прибытия (если saleFromShip = true)',
@@ -279,7 +279,7 @@ export class AuctionPositionResponseDto {
     })
     documents: string[];
 
-    @ApiProperty({ example: 'Some comment', nullable: true })
+    @ApiPropertyOptional({ example: 'Some comment', nullable: true })
     comment?: string;
 
     @ApiPropertyOptional({
@@ -287,6 +287,12 @@ export class AuctionPositionResponseDto {
         type: () => [DictionaryItemDto],
     })
     additionalServices?: DictionaryItemDto[];
+
+    @ApiPropertyOptional({ description: 'Масса нетто в граммах', example: 1000 })
+    netWeight?: number;
+
+    @ApiPropertyOptional({ description: 'Вид упаковки', example: 'Коробка' })
+    typeOfPackaging?: string;
 }
 
 export class AuctionParticipantResponseDto {
@@ -359,7 +365,7 @@ export class AuctionResponseDto {
     chatroomId: string;
 
     @ApiProperty({ example: '283336262', description: 'Серийный номер аукциона' })
-    serialNumber;
+    serialNumber: number;
 }
 
 export class AuctionListResponseDto {

@@ -13,6 +13,7 @@ import {
     AuctionRemoveResponseDto,
 } from 'src/modules/auction/dtos/auction-response.dto';
 import { AuctionBidDto } from 'src/modules/auction/dtos/auction.bid.position.dto';
+import { AuctionDeleteDto } from '../dtos/auction-delete.dto';
 
 @ApiTags('auction')
 @Controller({ version: '1', path: '/auction' })
@@ -88,8 +89,11 @@ export class AuctionController {
         type: AuctionRemoveResponseDto,
         description: 'Removes an auction and returns confirmation data.',
     })
-    async removeAuction(@Param('auctionId') auctionId: string): Promise<AuctionRemoveResponseDto> {
-        return this.auctionService.removeAuction(auctionId);
+    async removeAuction(
+        @Param('auctionId') auctionId: string,
+        @Body() dto: AuctionDeleteDto,
+    ): Promise<AuctionRemoveResponseDto> {
+        return this.auctionService.removeAuction(auctionId, dto);
     }
 
     @Post(':auctionId/bid')

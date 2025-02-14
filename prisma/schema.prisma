@@ -9,18 +9,17 @@ datasource db {
 }
 
 model Auction {
-  id              String      @id @default(uuid())
-  serialNumber    Int         @unique @map("serial_number")
-  type            AuctionType @default(REGULAR)
-  title           String
-  isActive        Boolean     @default(true)
-  isPublic        Boolean     @default(true)
-  startsAt        DateTime?
-  endsAt          DateTime?
-  initialPrice    Int         @default(0)
-  stepPrice       Int         @default(0)
-  buyoutPrice     Int?
-  auctionDuration Int
+  id           String      @id @default(uuid())
+  serialNumber Int         @unique @map("serial_number")
+  type         AuctionType @default(REGULAR)
+  title        String
+  isActive     Boolean     @default(true)
+  isPublic     Boolean     @default(true)
+  startsAt     DateTime?
+  endsAt       DateTime
+  initialPrice Int         @default(0)
+  stepPrice    Int         @default(0)
+  buyoutPrice  Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -33,6 +32,9 @@ model Auction {
   participants  AuctionParticipants[]
   AuctionWinner AuctionWinner[]
 
+  deletedAt    DateTime?
+  deleteReason String?
+
   @@map("auctions")
 }
 
@@ -43,7 +45,7 @@ model AuctionPosition {
   processingTypeId Int
   cuttingTypeId    Int
   sortId           Int
-  sizeId           Int
+  sizeId           Int?
   catchAreaId      Int?
 
   expiration            Int
@@ -55,8 +57,9 @@ model AuctionPosition {
   documents String[]
   comment   String?
 
+  netWeight          Int?
   storageName        String
-  onePieceWeight     Int
+  onePieceUnit       Int
   totalVolume        Int
   storageAddress     String
   storageTemperature Int
@@ -66,6 +69,8 @@ model AuctionPosition {
   shipName     String?
   arrivalPort  String?
   arrivalDate  DateTime?
+
+  typeOfPackaging String?
 
   additionalServices        Int[]
   additionalServicesComment String?

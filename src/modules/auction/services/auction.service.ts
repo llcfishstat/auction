@@ -20,6 +20,7 @@ import { lastValueFrom } from 'rxjs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AuctionBidDto } from 'src/modules/auction/dtos/auction.bid.position.dto';
 import { IAuthUser } from 'src/modules/auction/interfaces/auction.interface';
+import { AuctionDeleteDto } from '../dtos/auction-delete.dto';
 
 @Injectable()
 export class AuctionService {
@@ -72,7 +73,9 @@ export class AuctionService {
     async createAuction(dto: AuctionCreateDto): Promise<AuctionResponseDto> {
         const baseStartsAt = dto.startsAt ? new Date(dto.startsAt) : new Date();
 
-        const endsAtDate = new Date(baseStartsAt.getTime() + dto.auctionDuration * 60 * 60 * 1000);
+        const endsAtDate = new Date(dto.endsAt);
+
+        const serialNumber = Math.floor(Math.random() * 900000000) + 100000000;
 
         const createdAuction = await this.prisma.auction.create({
             data: {
@@ -81,14 +84,14 @@ export class AuctionService {
                 initialPrice: dto.initialPrice,
                 stepPrice: dto.stepPrice,
                 buyoutPrice: dto.buyoutPrice,
-                startsAt: dto.startsAt ? new Date(dto.startsAt) : baseStartsAt,
+                startsAt: baseStartsAt,
                 endsAt: endsAtDate,
                 companyId: dto.companyId,
-                auctionDuration: dto.auctionDuration,
                 chatroomId: dto.chatroomId,
                 isActive: true,
                 isPublic: true,
-                serialNumber: Math.floor(Math.random() * 900000000) + 100000000,
+                serialNumber,
+
             },
         });
 
@@ -271,17 +274,17 @@ export class AuctionService {
         };
     }
 
-    async removeAuction(auctionId: string) {
+    async removeAuction(auctionId: string, { reason }: AuctionDeleteDto) {
         const oldAuction = await this.prisma.auction.findUnique({
             where: { id: auctionId },
         });
         if (!oldAuction) {
-            throw new NotFoundException('Аукцион не найден');
+            throw new NotFoundException('Аукцион не найден или удалён');
         }
 
         return this.prisma.auction.update({
             where: { id: auctionId },
-            data: { isActive: false },
+            data: { isActive: false, deletedAt: new Date(), deleteReason: reason },
         });
     }
 
@@ -383,12 +386,6 @@ export class AuctionService {
             const dbPos = auction.positions.find(ap => ap.id === pos.id);
             if (!dbPos) {
                 throw new NotFoundException(`Позиция с ID=${pos.id} не найдена в аукционе`);
-            }
-
-            if (pos.price < dbPos.price) {
-                throw new BadRequestException(
-                    `Position ${pos.id}: new price ${pos.price} is below the current DB price ${dbPos.price}`,
-                );
             }
         }
 

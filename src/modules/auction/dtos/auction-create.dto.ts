@@ -94,21 +94,21 @@ export class AuctionCreatePositionDto {
     @IsNotEmpty()
     sortId: number;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Идентификатор размерной группы',
         example: 404,
     })
     @IsInt()
-    @IsNotEmpty()
-    sizeId: number;
+    @IsOptional()
+    sizeId?: number;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'Район вылова',
         example: 505,
     })
     @IsInt()
-    @IsNotEmpty()
-    catchAreaId: number;
+    @IsOptional()
+    catchAreaId?: number;
 
     @ApiProperty({
         description: 'Срок годности (в сутках, днях и т.п.)',
@@ -175,7 +175,7 @@ export class AuctionCreatePositionDto {
     })
     @IsString()
     @IsOptional()
-    comment: string;
+    comment?: string;
 
     @ApiProperty({
         description: 'Наименование склада хранения',
@@ -190,8 +190,7 @@ export class AuctionCreatePositionDto {
         example: 2.5,
     })
     @IsNumber()
-    @IsNotEmpty()
-    onePieceWeight: number;
+    onePieceUnit: number;
 
     @ApiProperty({
         description: 'Адрес склада хранения',
@@ -268,14 +267,16 @@ export class AuctionCreatePositionDto {
     @IsOptional()
     additionalServicesComment: string;
 
-    // @ApiProperty({
-    //     description: 'Дата обновления записи',
-    //     example: '2025-01-02T12:00:00.000Z',
-    // })
-    // @Type(() => Date)
-    // @IsDate()
-    // @IsNotEmpty()
-    // updatedAt: Date;
+    @ApiPropertyOptional({ description: 'Масса нетто в граммах', example: 1000 })
+    @IsNumber()
+    @Min(0)
+    @IsOptional()
+    netWeight?: number;
+
+    @ApiPropertyOptional({ description: 'Вид упаковки', example: "Коробка" })
+    @IsString()
+    @IsOptional()
+    typeOfPackaging?: string
 }
 
 export class AuctionCreateParticipantDto {
@@ -336,6 +337,14 @@ export class AuctionCreateDto {
     startsAt?: Date;
 
     @ApiProperty({
+        description: 'Дата и время конца аукциона',
+        example: '2025-02-10T08:00:00.000Z',
+    })
+    @Type(() => Date)
+    @IsDate()
+    endsAt: Date;
+
+    @ApiProperty({
         description: 'Начальная цена',
         example: 10000,
     })
@@ -361,15 +370,6 @@ export class AuctionCreateDto {
     @Min(0)
     @IsOptional()
     buyoutPrice?: number;
-
-    @ApiProperty({
-        description: 'Продолжительность аукциона в часах',
-        example: 24,
-    })
-    @IsInt()
-    @Min(1)
-    @IsNotEmpty()
-    auctionDuration: number;
 
     @ApiProperty({
         description: 'ID чата для участников аукциона',
