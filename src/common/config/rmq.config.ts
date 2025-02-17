@@ -7,6 +7,7 @@ export default registerAs(
     uri: process.env.RABBITMQ_URL,
     auth: process.env.RABBITMQ_AUTH_QUEUE,
     auction: process.env.RABBITMQ_AUCTION_QUEUE,
-    post: process.env.RABBITMQ_POST_QUEUE
+    post: process.env.RABBITMQ_POST_QUEUE,
+    notification: process.env.RABBITMQ_NOTIFICATION_QUEUE
   }),
 );

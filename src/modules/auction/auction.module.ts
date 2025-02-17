@@ -6,43 +6,58 @@ import { PrismaService } from 'src/common/services/prisma.service';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
-  controllers: [AuctionController],
-  imports: [
-    ConfigModule,
-    ClientsModule.registerAsync([
-      {
-        name: 'AUTH_SERVICE',
-        imports: [ConfigModule],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get('rmq.uri')}`],
-            queue: `${configService.get('rmq.auth')}`,
-            queueOptions: {
-              durable: false,
+    controllers: [AuctionController],
+    imports: [
+        ConfigModule,
+        ClientsModule.registerAsync([
+            {
+                name: 'AUTH_SERVICE',
+                imports: [ConfigModule],
+                useFactory: async (configService: ConfigService) => ({
+                    transport: Transport.RMQ,
+                    options: {
+                        urls: [`${configService.get('rmq.uri')}`],
+                        queue: `${configService.get('rmq.auth')}`,
+                        queueOptions: {
+                            durable: false,
+                        },
+                    },
+                }),
+                inject: [ConfigService],
             },
-          },
-        }),
-        inject: [ConfigService],
-      },
-      {
-        name: 'POST_SERVICE',
-        imports: [ConfigModule],
-        useFactory: async (configService: ConfigService) => ({
-          transport: Transport.RMQ,
-          options: {
-            urls: [`${configService.get('rmq.uri')}`],
-            queue: `${configService.get('rmq.post')}`,
-            queueOptions: {
-              durable: false,
+            {
+                name: 'POST_SERVICE',
+                imports: [ConfigModule],
+                useFactory: async (configService: ConfigService) => ({
+                    transport: Transport.RMQ,
+                    options: {
+                        urls: [`${configService.get('rmq.uri')}`],
+                        queue: `${configService.get('rmq.post')}`,
+                        queueOptions: {
+                            durable: false,
+                        },
+                    },
+                }),
+                inject: [ConfigService],
             },
-          },
-        }),
-        inject: [ConfigService],
-      },
-    ]),
-  ],
-  providers: [PrismaService, AuctionService],
-  exports: [AuctionService],
+            {
+                name: 'NOTIFICATION_SERVICE',
+                imports: [ConfigModule],
+                useFactory: async (configService: ConfigService) => ({
+                    transport: Transport.RMQ,
+                    options: {
+                        urls: [`${configService.get('rmq.uri')}`],
+                        queue: `${configService.get('rmq.notification')}`,
+                        queueOptions: {
+                            durable: false,
+                        },
+                    },
+                }),
+                inject: [ConfigService],
+            },
+        ]),
+    ],
+    providers: [PrismaService, AuctionService],
+    exports: [AuctionService],
 })
 export class AuctionModule {}

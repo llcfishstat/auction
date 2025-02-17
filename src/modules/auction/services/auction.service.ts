@@ -16,11 +16,13 @@ import {
 } from 'src/modules/auction/dtos/auction-create.dto';
 import { AuctionUpdateDto } from 'src/modules/auction/dtos/auction-update.dto';
 import { AuctionResponseDto } from 'src/modules/auction/dtos/auction-response.dto';
-import { lastValueFrom } from 'rxjs';
+import { firstValueFrom, lastValueFrom } from 'rxjs';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { AuctionBidDto } from 'src/modules/auction/dtos/auction.bid.position.dto';
 import { IAuthUser } from 'src/modules/auction/interfaces/auction.interface';
 import { AuctionDeleteDto } from '../dtos/auction-delete.dto';
+import { CompanyResponseDto } from '../dtos/company-response.dto';
+import { UserResponseDto } from '../dtos/user.response.dto';
 
 @Injectable()
 export class AuctionService {
@@ -28,9 +30,24 @@ export class AuctionService {
         private readonly prisma: PrismaService,
         @Inject('AUTH_SERVICE') private readonly authClient: ClientProxy,
         @Inject('POST_SERVICE') private readonly postClient: ClientProxy,
+        @Inject('NOTIFICATION_SERVICE') private readonly notificationClient: ClientProxy,
     ) {
         this.authClient.connect();
         this.postClient.connect();
+        this.notificationClient.connect();
+    }
+
+    async sendNotification(email: string, type: string, body: any): Promise<void> {
+        firstValueFrom(
+            this.notificationClient.send(
+                'sendEmail',
+                JSON.stringify({
+                    email,
+                    type,
+                    body,
+                }),
+            ),
+        ).catch(console.log);
     }
 
     @Cron(CronExpression.EVERY_MINUTE)
@@ -65,6 +82,36 @@ export class AuctionService {
                             userId: winnerUserId,
                         },
                     });
+
+                    const auctionCompany: CompanyResponseDto = await firstValueFrom(
+                        this.authClient.send(
+                            'companyById',
+                            JSON.stringify({ companyId: auction.companyId }),
+                        ),
+                    );
+
+                    const winnerUser: UserResponseDto = await firstValueFrom(
+                        this.authClient.send('userById', JSON.stringify({ userId: winnerUserId })),
+                    );
+
+                    this.sendNotification(winnerUser.email, 'AUCTION_WINNER', {
+                        toName: [winnerUser.lastName, winnerUser.firstName, winnerUser.password]
+                            .filter(Boolean)
+                            .join(' '),
+                        companyLogo: auctionCompany.logoUrl,
+                        company: auctionCompany.organizationName,
+                        product: auction.title,
+                        auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+                        companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
+                    });
+
+                    this.sendNotification('kuspekov10@list.ru', 'AUCTION_THANX', {
+                        toName: 'toName',
+                        companyLogo: 'companyLogo',
+                        company: 'company',
+                        product: 'product',
+                        auctionHref: 'auctionHref',
+                    });
                 }
             });
         }
@@ -91,7 +138,6 @@ export class AuctionService {
                 isActive: true,
                 isPublic: true,
                 serialNumber,
-
             },
         });
 
@@ -446,6 +492,34 @@ export class AuctionService {
         });
 
         const updatedAuction = await this.getAuctionById(auctionId);
+
+        const auctionCompany: CompanyResponseDto = await firstValueFrom(
+            this.authClient.send('companyById', JSON.stringify({ companyId: auction.companyId })),
+        );
+
+        const winnerUser: UserResponseDto = await firstValueFrom(
+            this.authClient.send('userById', JSON.stringify({ userId: user.id })),
+        );
+
+        this.sendNotification(winnerUser.email, 'AUCTION_WINNER', {
+            toName: [winnerUser.lastName, winnerUser.firstName, winnerUser.password]
+                .filter(Boolean)
+                .join(' '),
+            companyLogo: auctionCompany.logoUrl,
+            company: auctionCompany.organizationName,
+            product: auction.title,
+            auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+            companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
+        });
+
+        this.sendNotification('kuspekov10@list.ru', 'AUCTION_THANX', {
+            toName: 'toName',
+            companyLogo: 'companyLogo',
+            company: 'company',
+            product: 'product',
+            auctionHref: 'auctionHref',
+        });
+
         return updatedAuction;
     }
 }

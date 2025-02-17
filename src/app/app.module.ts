@@ -59,15 +59,30 @@ import { ScheduleModule } from '@nestjs/schedule';
                 }),
                 inject: [ConfigService],
             },
+            {
+                name: 'NOTIFICATION_SERVICE',
+                imports: [ConfigModule],
+                useFactory: async (configService: ConfigService) => ({
+                    transport: Transport.RMQ,
+                    options: {
+                        urls: [`${configService.get('rmq.uri')}`],
+                        queue: `${configService.get('rmq.notification')}`,
+                        queueOptions: {
+                            durable: false,
+                        },
+                    },
+                }),
+                inject: [ConfigService],
+            },
         ]),
     ],
     controllers: [AppController],
     providers: [
-      PrismaService,
+        PrismaService,
         {
             provide: APP_INTERCEPTOR,
             useClass: ResponseInterceptor,
         },
-    ]
+    ],
 })
 export class AppModule {}
