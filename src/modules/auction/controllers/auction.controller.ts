@@ -45,27 +45,33 @@ export class AuctionController {
             this.authClient.send('companyById', JSON.stringify({ companyId: dto.companyId })),
         );
 
-        dto.participants.map(async p => {
-            const users: UserResponseDto[] = await firstValueFrom(
-                this.authClient.send(
-                    'usersByCompanyId',
-                    JSON.stringify({ companyId: p.companyId }),
-                ),
-            );
+        Promise.all(
+            dto.participants.map(async p => {
+                const users: UserResponseDto[] = await firstValueFrom(
+                    this.authClient.send(
+                        'usersByCompanyId',
+                        JSON.stringify({ companyId: p.companyId }),
+                    ),
+                );
 
-            users.forEach(user => {
-                this.auctionService.sendNotification(user.email, 'AUCTION_JOIN', {
-                    toName: [user.lastName, user.firstName, user.patronymic]
-                        .filter(Boolean)
-                        .join(' '),
-                    companyLogo: auctionCompany.logoUrl,
-                    company: auctionCompany.organizationName,
-                    product: dto.title,
-                    auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
-                    companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
+                await Promise.all(
+                    users.map(user => {
+                        this.auctionService.sendNotification(user.email, 'AUCTION_JOIN', {
+                            toName: [user.lastName, user.firstName, user.patronymic]
+                                .filter(Boolean)
+                                .join(' '),
+                            companyLogo: auctionCompany.logoUrl,
+                            company: auctionCompany.organizationName,
+                            product: dto.title,
+                            auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+                            companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
+                        });
+                    }),
+                ).catch(error => {
+                    console.log('error 1:', error);
                 });
-            });
-        });
+            }),
+        ).catch(console.log);
 
         return auction;
     }
@@ -131,13 +137,30 @@ export class AuctionController {
     ): Promise<AuctionRemoveResponseDto> {
         const auction = await this.auctionService.removeAuction(auctionId, dto);
 
-        // this.auctionService.sendNotification('kuspekov10@list.ru', 'AUCTION_THANX', {
-        //     toName: 'toName',
-        //     companyLogo: 'companyLogo',
-        //     company: 'company',
-        //     product: 'product',
-        //     auctionHref: 'auctionHref',
-        // });
+        const auctionCompany: CompanyResponseDto = await firstValueFrom(
+            this.authClient.send('companyById', JSON.stringify({ companyId: auction.companyId })),
+        );
+
+        auction.participants.map(async p => {
+            const users: UserResponseDto[] = await firstValueFrom(
+                this.authClient.send(
+                    'usersByCompanyId',
+                    JSON.stringify({ companyId: p.companyId }),
+                ),
+            );
+
+            users.forEach(user => {
+                this.auctionService.sendNotification(user.email, 'AUCTION_THANX', {
+                    toName: [user.lastName, user.firstName, user.patronymic]
+                        .filter(Boolean)
+                        .join(' '),
+                    companyLogo: auctionCompany.logoUrl,
+                    company: auctionCompany.organizationName,
+                    product: auction.title,
+                    auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+                });
+            });
+        });
 
         return auction;
     }
@@ -166,6 +189,46 @@ export class AuctionController {
         @Param('auctionId') auctionId: string,
     ): Promise<AuctionResponseDto> {
         const auction = await this.auctionService.buyoutAuction(auctionId, user);
+
+        const winnerUser: UserResponseDto = await firstValueFrom(
+            this.authClient.send('userById', JSON.stringify({ userId: user.id })),
+        );
+
+        const auctionCompany: CompanyResponseDto = await firstValueFrom(
+            this.authClient.send('companyById', JSON.stringify({ companyId: auction.company.id })),
+        );
+
+        this.auctionService.sendNotification(winnerUser.email, 'AUCTION_WINNER', {
+            toName: [winnerUser.lastName, winnerUser.firstName, winnerUser.password]
+                .filter(Boolean)
+                .join(' '),
+            companyLogo: auctionCompany.logoUrl,
+            company: auctionCompany.organizationName,
+            product: auction.title,
+            auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+            companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
+        });
+
+        auction.participants.map(async p => {
+            const users: UserResponseDto[] = await firstValueFrom(
+                this.authClient.send(
+                    'usersByCompanyId',
+                    JSON.stringify({ companyId: p.companyId }),
+                ),
+            );
+
+            users.forEach(user => {
+                this.auctionService.sendNotification(user.email, 'AUCTION_THANX', {
+                    toName: [user.lastName, user.firstName, user.patronymic]
+                        .filter(Boolean)
+                        .join(' '),
+                    companyLogo: auctionCompany.logoUrl,
+                    company: auctionCompany.organizationName,
+                    product: auction.title,
+                    auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+                });
+            });
+        });
 
         return auction;
     }

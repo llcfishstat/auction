@@ -59,6 +59,7 @@ export class AuctionService {
                 isActive: true,
                 endsAt: { lte: now },
             },
+            include: { participants: true },
         });
 
         if (!auctionsToClose.length) return;
@@ -105,12 +106,25 @@ export class AuctionService {
                         companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
                     });
 
-                    this.sendNotification('kuspekov10@list.ru', 'AUCTION_THANX', {
-                        toName: 'toName',
-                        companyLogo: 'companyLogo',
-                        company: 'company',
-                        product: 'product',
-                        auctionHref: 'auctionHref',
+                    auction.participants.map(async p => {
+                        const users: UserResponseDto[] = await firstValueFrom(
+                            this.authClient.send(
+                                'usersByCompanyId',
+                                JSON.stringify({ companyId: p.companyId }),
+                            ),
+                        );
+
+                        users.forEach(user => {
+                            this.sendNotification(user.email, 'AUCTION_THANX', {
+                                toName: [user.lastName, user.firstName, user.patronymic]
+                                    .filter(Boolean)
+                                    .join(' '),
+                                companyLogo: auctionCompany.logoUrl,
+                                company: auctionCompany.organizationName,
+                                product: auction.title,
+                                auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
+                            });
+                        });
                     });
                 }
             });
@@ -331,6 +345,7 @@ export class AuctionService {
         return this.prisma.auction.update({
             where: { id: auctionId },
             data: { isActive: false, deletedAt: new Date(), deleteReason: reason },
+            include: { positions: true, participants: true },
         });
     }
 
@@ -492,33 +507,6 @@ export class AuctionService {
         });
 
         const updatedAuction = await this.getAuctionById(auctionId);
-
-        const auctionCompany: CompanyResponseDto = await firstValueFrom(
-            this.authClient.send('companyById', JSON.stringify({ companyId: auction.companyId })),
-        );
-
-        const winnerUser: UserResponseDto = await firstValueFrom(
-            this.authClient.send('userById', JSON.stringify({ userId: user.id })),
-        );
-
-        this.sendNotification(winnerUser.email, 'AUCTION_WINNER', {
-            toName: [winnerUser.lastName, winnerUser.firstName, winnerUser.password]
-                .filter(Boolean)
-                .join(' '),
-            companyLogo: auctionCompany.logoUrl,
-            company: auctionCompany.organizationName,
-            product: auction.title,
-            auctionHref: `https://fishstat.ru/auctions/${auction.id}`,
-            companyChat: `https://fishstat.ru/chat?chatroomId=${auction.chatroomId}`,
-        });
-
-        this.sendNotification('kuspekov10@list.ru', 'AUCTION_THANX', {
-            toName: 'toName',
-            companyLogo: 'companyLogo',
-            company: 'company',
-            product: 'product',
-            auctionHref: 'auctionHref',
-        });
 
         return updatedAuction;
     }
